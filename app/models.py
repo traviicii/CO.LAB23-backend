@@ -106,7 +106,7 @@ class Projects(db.Model):
     hours_wk = db.Column(db.String(100))
     looking_for = db.Column(db.String(500))
     complete = db.Column(db.Boolean, unique=False, default=False)
-    team_size = db.Column(db.Integer)
+    team_size = db.Column(db.Integer) # NOT NEEDED
     need_pm = db.Column(db.Boolean, unique=False, default=True) # NOT NEEDED
     need_designer = db.Column(db.Boolean, unique=False, default=True) # NOT NEEDED
     need_dev = db.Column(db.Boolean, unique=False, default=True) # NOT NEEDED
@@ -141,6 +141,30 @@ class Projects(db.Model):
         db.session.commit()
 
     def to_dict(self):
+        # Default values if the attributes are None
+        devs_wanted = self.devs_wanted or 0
+        designers_wanted = self.designers_wanted or 0
+        pms_wanted = self.pms_wanted or 0
+
+        # Initialize counters for each role
+        current_devs = 0
+        current_designers = 0
+        current_managers = 0
+
+        # Count the current members of each role
+        for member in self.members:
+            if member.prod_role == 'Developer':
+                current_devs += 1
+            elif member.prod_role == 'Designer':
+                current_designers += 1
+            elif member.prod_role == 'Product Manager':
+                current_managers += 1
+
+        # Calculate the number of each role still needed, the 0 ensures that if for some reason the count is a negative # the function just returns 0 instead
+        devs_needed = max(devs_wanted - current_devs, 0)
+        designers_needed = max(designers_wanted - current_designers, 0)
+        managers_needed = max(pms_wanted - current_managers, 0)
+
         return {
             "id": self.id,
             "name": self.name,
@@ -155,6 +179,9 @@ class Projects(db.Model):
             "pms_wanted": self.pms_wanted,
             "designers_wanted": self.designers_wanted,
             "devs_wanted": self.devs_wanted,
+            "devs_needed": devs_needed,
+            "designers_needed": designers_needed,
+            "pms_needed": managers_needed,
             "date_created": self.date_created,
             "admin_id": self.admin_id,
             "admin_name": f'{self.admin.first_name} {self.admin.last_name}'

@@ -583,7 +583,8 @@ def getProject(project_id):
         return {
             'status': 'ok',
             'project': project.to_dict(),
-            'admin': project.admin.to_dict()
+            'admin': project.admin.to_dict(),
+            'members': [member.to_dict() for member in project.members]
         }
     else:
         return {
