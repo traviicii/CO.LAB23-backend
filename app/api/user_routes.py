@@ -171,7 +171,8 @@ def removeProjectUser(user_id):
         user.saveToDB()
         return {
             'status': 'ok',
-            'message': "You've been successfully removed from your current project."
+            'message': "You've been successfully removed from your current project. You may join another project or create your own!",
+            'user': user.to_dict()
         }, 200
         
 
