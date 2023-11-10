@@ -105,12 +105,33 @@ def addProjectUser():
     # Query for the user and project
     user = User.query.get(user_id)
     project = Projects.query.get(project_id)
+    project_dict = project.to_dict()
+
+    # Check to see if the project is looking for a role that matches the user's product role
+    if user.prod_role == "Designer":
+        if project_dict["designers_needed"] == 0:
+            return {
+                'status': 'not ok',
+                'message': "This project isn't looking for a designer right now."
+            }
+    elif user.prod_role == "Developer":
+        if project_dict["devs_needed"] == 0:
+            return {
+                'status': 'not ok',
+                'message': "This project isn't looking for a developer right now."
+            }
+    elif user.prod_role == "Product Manager":
+        if project_dict["pms_needed"] == 0:
+            return {
+                'status': 'not ok',
+                'message': "This project isn't looking for a product manager right now."
+            }
 
     # Check if user or project does not exist
-    if user is None or project is None:
+    if project is None:
         return {
             'status': 'not ok',
-            'message': 'User or project not found.'
+            'message': 'Project not found. It may have been deleted.'
         }, 404
 
     # Check if the user is already part of another project
@@ -590,4 +611,28 @@ def getProject(project_id):
         return {
             'status': 'not ok',
             'message': 'Project not found.'
+        }
+    
+@api.post('/deleteproject/<int:admin_id>/<int:proj_id>')
+@token_auth.login_required
+def deleteProject(admin_id, proj_id):
+    project = Projects.query.get(proj_id)
+
+    if project.admin_id == admin_id:
+        for member in project.members:
+            member.current_project_id = None
+            member.is_admin = False
+            member.saveToDB()
+            if member.id != admin_id:
+                notify = Notifications(member.id, "The project you were involved with has been deleted by its administrator. Join another project or start your own!")
+                notify.saveToDB()
+        project.deleteFromDB()
+        return {
+            'status': 'ok',
+            'message': "Your project was successfully deleted! You may join another project or create a new one!"
+        }
+    else:
+        return {
+            'status': 'not ok',
+            'message': "You're not authorized to delete this project!"
         }
