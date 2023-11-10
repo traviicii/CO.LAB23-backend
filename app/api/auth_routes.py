@@ -31,6 +31,7 @@ def signUpAPI():
     last_name = data["personalForm"]['lastName']
     email = data["personalForm"]['email']
     password = data["personalForm"]['password']
+    linkedin = data["personalForm"]['linkedin']
 
     prev_role = data["professionalBackground"]["previousRole"]
     # prev_exp = data["professionalBackground"]["yearsOfExperience"]
@@ -63,6 +64,7 @@ def signUpAPI():
     
     #Creates new User instance
     user = User(first_name, last_name, email, password)
+    user.linkedin = linkedin
 
     #Adds remaining User column data to new User from JSON data
     # google uid (user.uid) should be involved somehow
