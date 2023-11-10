@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 2bd33899694c
+Revision ID: e92030963e76
 Revises: 
-Create Date: 2023-10-23 22:02:51.673982
+Create Date: 2023-11-10 13:17:13.539924
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '2bd33899694c'
+revision = 'e92030963e76'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,7 +24,7 @@ def upgrade():
     sa.Column('duration', sa.String(length=50), nullable=True),
     sa.Column('industries', postgresql.ARRAY(sa.String()), nullable=True),
     sa.Column('admin_timezone', sa.String(length=50), nullable=True),
-    sa.Column('description', sa.String(length=500), nullable=False),
+    sa.Column('description', sa.String(length=1000), nullable=False),
     sa.Column('hours_wk', sa.String(length=100), nullable=True),
     sa.Column('looking_for', sa.String(length=500), nullable=True),
     sa.Column('complete', sa.Boolean(), nullable=True),
@@ -33,6 +33,9 @@ def upgrade():
     sa.Column('need_designer', sa.Boolean(), nullable=True),
     sa.Column('need_dev', sa.Boolean(), nullable=True),
     sa.Column('date_created', sa.DateTime(), nullable=False),
+    sa.Column('pms_wanted', sa.Integer(), nullable=True),
+    sa.Column('devs_wanted', sa.Integer(), nullable=True),
+    sa.Column('designers_wanted', sa.Integer(), nullable=True),
     sa.Column('admin_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['admin_id'], ['user.id'], name='fk_projects_user', use_alter=True),
     sa.PrimaryKeyConstraint('id'),
@@ -64,6 +67,7 @@ def upgrade():
     sa.Column('developer_skills', postgresql.ARRAY(sa.String()), nullable=True),
     sa.Column('management_skills', postgresql.ARRAY(sa.String()), nullable=True),
     sa.Column('wanted_skills', postgresql.ARRAY(sa.String()), nullable=True),
+    sa.Column('other_skills', postgresql.ARRAY(sa.String()), nullable=True),
     sa.Column('linkedin', sa.String(length=100), nullable=True),
     sa.Column('github', sa.String(length=100), nullable=True),
     sa.Column('is_admin', sa.Boolean(), nullable=True),
@@ -73,11 +77,48 @@ def upgrade():
     sa.UniqueConstraint('apitoken'),
     sa.UniqueConstraint('email')
     )
+    op.create_table('inspiration',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('project_id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=50), nullable=True),
+    sa.Column('content', sa.String(length=500), nullable=True),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id')
+    )
+    op.create_table('links',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('project_id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=250), nullable=False),
+    sa.Column('content', sa.String(length=500), nullable=True),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id')
+    )
+    op.create_table('meetings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('project_id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=250), nullable=False),
+    sa.Column('date', sa.String(length=100), nullable=True),
+    sa.Column('notes', sa.String(length=500), nullable=True),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id')
+    )
+    op.create_table('notifications',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('content', sa.String(length=500), nullable=True),
+    sa.Column('seen', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id')
+    )
     op.create_table('resources',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=50), nullable=True),
-    sa.Column('content', sa.String(length=100), nullable=True),
+    sa.Column('content', sa.String(length=500), nullable=True),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
@@ -93,6 +134,12 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
+    op.create_table('user_projects_association',
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('project_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
+    )
     op.create_table('todos_users',
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('todo_id', sa.Integer(), nullable=True),
@@ -105,8 +152,13 @@ def upgrade():
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('todos_users')
+    op.drop_table('user_projects_association')
     op.drop_table('todo')
     op.drop_table('resources')
+    op.drop_table('notifications')
+    op.drop_table('meetings')
+    op.drop_table('links')
+    op.drop_table('inspiration')
     op.drop_table('user')
     op.drop_table('projects')
     # ### end Alembic commands ###
